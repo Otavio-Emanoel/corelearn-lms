@@ -7,8 +7,14 @@ export class CourseService {
     return repo.create(data);
   }
 
-  async list(adminId?: string) {
-    return repo.findAll(adminId);
+  async list(userId: string, role: string, adminId: string | null) {
+    // DEV sees all courses
+    if (role === "DEV") return repo.findAll();
+    // ADMIN sees only their own courses
+    if (role === "ADMIN") return repo.findAll(userId);
+    // STUDENT sees published courses from their assigned admin
+    if (adminId) return repo.findAllPublishedByAdmin(adminId);
+    return [];
   }
 
   async getById(id: string) {
