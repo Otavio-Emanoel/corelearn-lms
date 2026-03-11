@@ -21,6 +21,13 @@ export class UserRepository {
     });
   }
 
+  async listStudentsByAdmin(adminId: string) {
+    return prisma.user.findMany({
+      where: { role: "STUDENT", adminId },
+      select: { id: true, email: true, name: true, role: true, adminId: true, createdAt: true },
+    });
+  }
+
   async deleteById(id: string) {
     return prisma.user.delete({ where: { id } });
   }

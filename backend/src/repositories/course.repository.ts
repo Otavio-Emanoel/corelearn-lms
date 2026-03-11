@@ -13,6 +13,14 @@ export class CourseRepository {
     });
   }
 
+  async findAllPublishedByAdmin(adminId: string) {
+    return prisma.course.findMany({
+      where: { adminId, published: true },
+      include: { modules: { include: { lessons: { orderBy: { order: "asc" } } }, orderBy: { order: "asc" } } },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async findById(id: string) {
     return prisma.course.findUnique({
       where: { id },
