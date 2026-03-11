@@ -24,7 +24,7 @@ async function main() {
                 email: "dev@corelearn.com",
                 name: "Dev User",
                 password: "senha123",
-                role: "DEVELOPER" as any
+                role: "DEV" as any
             }
         ];
         for (let i = 0; i < users.length; i++) {
