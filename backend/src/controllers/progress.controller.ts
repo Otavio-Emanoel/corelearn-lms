@@ -56,6 +56,11 @@ export class ProgressController {
     }
   }
 
+  async getAll(request: FastifyRequest, reply: FastifyReply) {
+    const progress = await service.getAllByUser(request.user.id);
+    return reply.send(progress);
+  }
+
   async getByLesson(request: FastifyRequest<{ Params: { lessonId: string } }>, reply: FastifyReply) {
     const progress = await service.getByLesson(request.user.id, request.params.lessonId);
     return reply.send(progress ?? null);
