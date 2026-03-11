@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DEV
+  ADMIN
+  STUDENT
+}
+
+enum VideoProvider {
+  YOUTUBE
+  VIMEO
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(STUDENT)
+  adminId   String?  // For STUDENT: points to their ADMIN tenant
+  admin     User?    @relation("AdminStudents", fields: [adminId], references: [id])
+  students  User[]   @relation("AdminStudents")
+
+  courses   Course[]   @relation("AdminCourses")
+  progress  Progress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  published   Boolean  @default(false)
+  adminId     String
+  admin       User     @relation("AdminCourses", fields: [adminId], references: [id])
+
+  modules Module[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("courses")
+}
+
+model Module {
+  id       String @id @default(cuid())
+  title    String
+  order    Int
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("modules")
+}
+
+model Lesson {
+  id           String        @id @default(cuid())
+  title        String
+  description  String?
+  videoUrl     String
+  videoProvider VideoProvider @default(YOUTUBE)
+  durationSecs Int           @default(0)
+  order        Int
+  moduleId     String
+  module       Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  progress Progress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("lessons")
+}
+
+model Progress {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId     String
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  watchedSecs  Int      @default(0)
+  completed    Boolean  @default(false)
+  lastPosition Int      @default(0) // seconds – resume from here
+  completedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+  @@map("progress")
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  message   String
+  context   Json?    // arbitrary metadata (stack trace, request info, etc.)
+  userId    String?  // who triggered it (optional)
+
+  createdAt DateTime @default(now())
+
+  @@map("system_logs")
+}
