@@ -1,11 +1,27 @@
-import { createHash } from "crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { Role } from "@prisma/client";
 import { UserRepository } from "../repositories/user.repository";
 
 const repo = new UserRepository();
 
+const SCRYPT_PARAMS = { N: 16384, r: 8, p: 1 };
+const KEY_LEN = 64;
+
 function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, KEY_LEN, SCRYPT_PARAMS).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  try {
+    const derived = scryptSync(password, salt, KEY_LEN, SCRYPT_PARAMS);
+    return timingSafeEqual(Buffer.from(hash, "hex"), derived);
+  } catch {
+    return false;
+  }
 }
 
 export class AuthService {
@@ -29,8 +45,7 @@ export class AuthService {
     const user = await repo.findByEmail(email);
     if (!user) return null;
 
-    const hashed = hashPassword(password);
-    if (user.password !== hashed) return null;
+    if (!verifyPassword(password, user.password)) return null;
 
     return user;
   }
