@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { apiClient } from "@/lib/api";
 
 interface Lesson {
@@ -23,11 +24,31 @@ interface Course {
   modules: Module[];
 }
 
+interface ProgressEntry {
+  lessonId: string;
+  completed: boolean;
+}
+
 export default function StudentDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [progressMap, setProgressMap] = useState<Map<string, boolean>>(new Map());
 
   useEffect(() => {
-    apiClient.get<Course[]>("/courses").then(setCourses).catch(console.error);
+    async function loadData() {
+      try {
+        const [coursesData, progressData] = await Promise.all([
+          apiClient.get<Course[]>("/courses"),
+          apiClient.get<ProgressEntry[]>("/progress").catch(() => [] as ProgressEntry[]),
+        ]);
+        setCourses(coursesData);
+        const map = new Map<string, boolean>();
+        progressData.forEach((p) => map.set(p.lessonId, p.completed));
+        setProgressMap(map);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadData();
   }, []);
 
   return (
@@ -42,7 +63,10 @@ export default function StudentDashboard() {
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => {
-            const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+            const allLessons = course.modules.flatMap((m) => m.lessons);
+            const totalLessons = allLessons.length;
+            const completedLessons = allLessons.filter((l) => progressMap.get(l.id)).length;
+            const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
             const firstLesson = course.modules[0]?.lessons[0];
 
             return (
@@ -60,13 +84,22 @@ export default function StudentDashboard() {
                   {course.description && (
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{course.description}</p>
                   )}
-                  <p className="mt-2 text-xs text-muted-foreground">{totalLessons} lessons</p>
+
+                  {/* Progress bar */}
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{completedLessons}/{totalLessons} lessons</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <Progress value={percent} />
+                  </div>
+
                   {firstLesson && (
                     <Link
                       href={`/student/classroom/${firstLesson.id}`}
                       className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
-                      Start Learning →
+                      {percent > 0 ? "Continue Learning →" : "Start Learning →"}
                     </Link>
                   )}
                 </div>

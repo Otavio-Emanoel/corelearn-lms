@@ -104,14 +104,32 @@ export default function ClassroomPage() {
     }
   }
 
-  // Cleanup on unmount
+  // Save progress on tab close / page unload
   useEffect(() => {
-    return () => {
+    function handleBeforeUnload() {
       if (playStartTime) {
-        saveProgress(0);
+        const sessionWatchedSecs = Math.floor((Date.now() - playStartTime) / 1000);
+        // Use sendBeacon for reliable delivery during unload
+        const url = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api"}/progress/pause`;
+        const body = JSON.stringify({ lessonId, currentPositionSecs: 0, sessionWatchedSecs });
+        navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+        clearPlayStartTime();
       }
+    }
+
+    function handleVisibilityChange() {
+      if (document.hidden && playStartTime) {
+        handleBeforeUnload();
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [playStartTime]);
+  }, [playStartTime, lessonId, clearPlayStartTime]);
 
   const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
@@ -183,11 +201,10 @@ export default function ClassroomPage() {
                   <li key={lesson.id}>
                     <button
                       onClick={() => router.push(`/student/classroom/${lesson.id}`)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                        isActive
+                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${isActive
                           ? "bg-primary/10 font-medium text-primary"
                           : "hover:bg-accent"
-                      }`}
+                        }`}
                     >
                       {lesson.completed ? (
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
