@@ -22,6 +22,12 @@ export async function progressRoutes(app: FastifyInstance) {
     controller.complete.bind(controller),
   );
 
+  app.get(
+    "/",
+    { preHandler: [app.authenticate] },
+    controller.getAll.bind(controller),
+  );
+
   app.get<{ Params: { lessonId: string } }>(
     "/:lessonId",
     { preHandler: [app.authenticate] },
