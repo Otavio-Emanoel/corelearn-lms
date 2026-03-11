@@ -16,6 +16,9 @@ const config: Config = {
       screens: { "2xl": "1400px" },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+      },
       colors: {
         // All colours driven by CSS variables → white-label theming
         border: "hsl(var(--border))",
