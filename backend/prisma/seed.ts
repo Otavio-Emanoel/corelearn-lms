@@ -6,22 +6,48 @@ const prisma = new PrismaClient();
 const authService = new AuthService();
 
 async function main() {
-    const email = "admin@corelearn.com";
+    try {
+        const users = [
+            {
+                email: "admin@corelearn.com",
+                name: "Admin User",
+                password: "senha123",
+                role: "ADMIN" as any
+            },
+            {
+                email: "aluno@corelearn.com",
+                name: "Student User",
+                password: "senha123",
+                role: "STUDENT" as any
+            },
+            {
+                email: "dev@corelearn.com",
+                name: "Dev User",
+                password: "senha123",
+                role: "DEVELOPER" as any
+            }
+        ];
+        for (let i = 0; i < users.length; i++) {
+            const email = users[i].email;
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-        console.log("Admin user already exists");
-        return;
+            const existing = await prisma.user.findUnique({ where: { email } });
+            if (existing) {
+                console.log(`User already exists: ${email}`);
+                continue;
+            }
+
+            const user = await authService.register({
+                email,
+                name: users[i].name,
+                password: users[i].password,
+                role: users[i].role
+            });
+
+            console.log("User created:", user.email);
+        }
+    } catch (error) {
+        console.error("Error creating users:", error);
     }
-
-    const admin = await authService.register({
-        email,
-        name: "Admin User",
-        password: "password123",
-        role: "ADMIN" as any
-    });
-
-    console.log("Admin user created:", admin.email);
 }
 
 main()
