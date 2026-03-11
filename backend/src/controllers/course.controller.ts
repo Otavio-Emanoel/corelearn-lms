@@ -24,8 +24,7 @@ export class CourseController {
   }
 
   async list(request: FastifyRequest, reply: FastifyReply) {
-    const adminId = request.user.role === "ADMIN" ? request.user.id : undefined;
-    return reply.send(await service.list(adminId));
+    return reply.send(await service.list(request.user.id, request.user.role, request.user.adminId));
   }
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
