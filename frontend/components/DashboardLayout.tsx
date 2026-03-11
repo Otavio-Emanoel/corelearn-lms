@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface NavItem {
   href: string;
@@ -46,11 +47,10 @@ export default function DashboardLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive
+                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : "hover:bg-sidebar-accent/50"
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </Link>
@@ -60,13 +60,14 @@ export default function DashboardLayout({
           </ul>
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
-          <div className="mb-3 text-xs text-muted-foreground">
+        <div className="border-t border-sidebar-border p-4 space-y-2">
+          <div className="mb-1 text-xs text-muted-foreground">
             {user?.name ?? "User"}{" "}
             <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-[10px] font-medium uppercase">
               {user?.role}
             </span>
           </div>
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-foreground"
